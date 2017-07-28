@@ -34,6 +34,10 @@ public class Client extends BinaryClient implements Commands {
     super(host, port);
   }
 
+  public Client(final String host, final int port, ConnectionOption option) {
+    super(host, port, option);
+  }
+
   public Client(final String host, final int port, final boolean ssl) {
     super(host, port, ssl);
   }

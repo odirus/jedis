@@ -15,6 +15,7 @@ import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.JedisCluster.Reset;
 import redis.clients.jedis.commands.AdvancedJedisCommands;
@@ -51,6 +52,10 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
 
   public Jedis(final String host, final int port, final boolean ssl) {
     super(host, port, ssl);
+  }
+
+  public Jedis(final String host, final int port, final ConnectionOption option) {
+      super(host, port, option);
   }
 
   public Jedis(final String host, final int port, final boolean ssl,
@@ -2762,6 +2767,17 @@ public class Jedis extends BinaryJedis implements JedisCommands, MultiKeyCommand
 
   @Override
   public Object eval(String script, int keyCount, String... params) {
+      if (client.getConnectionOption().getOptimizeEval()) {
+          byte[] scriptMD5 = DigestUtils.md5(script);
+          byte[][] scriptDetail = scriptCacheMap.get(new ScriptCacheKey(scriptMD5));
+
+          if (scriptDetail != null) {
+              return evalsha(SafeEncoder.encode(scriptDetail[1]), keyCount, params);
+          } else {
+              loadScript(scriptMD5, SafeEncoder.encode(script));
+          }
+      }
+
     client.setTimeoutInfinite();
     try {
       client.eval(script, keyCount, params);

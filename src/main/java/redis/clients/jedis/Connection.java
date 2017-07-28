@@ -37,6 +37,7 @@ public class Connection implements Closeable {
   private SSLSocketFactory sslSocketFactory;
   private SSLParameters sslParameters;
   private HostnameVerifier hostnameVerifier;
+  private ConnectionOption connectionOption;
 
   public Connection() {
   }
@@ -48,6 +49,12 @@ public class Connection implements Closeable {
   public Connection(final String host, final int port) {
     this.host = host;
     this.port = port;
+  }
+
+  public Connection(final String host, final int port, ConnectionOption option) {
+    this.host = host;
+    this.port = port;
+    this.connectionOption = option;
   }
 
   public Connection(final String host, final int port, final boolean ssl) {
@@ -326,4 +333,8 @@ public class Connection implements Closeable {
     }
     return responses;
   }
+
+    public ConnectionOption getConnectionOption() {
+        return connectionOption;
+    }
 }

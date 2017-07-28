@@ -16,6 +16,7 @@ import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import redis.clients.jedis.Protocol;
@@ -137,5 +138,14 @@ public class ProtocolTest {
       return;
     }
     fail("Expected a JedisBusyException to be thrown.");
+  }
+
+  @Test
+  public void convertByteToInt() {
+    final int[] testData = {Integer.MIN_VALUE, -1, 0, 1, Integer.MAX_VALUE};
+
+    for (int value: testData) {
+      Assert.assertEquals(Protocol.convertByteArrayToInt(Protocol.toByteArray(value)), value);
+    }
   }
 }

@@ -235,6 +235,12 @@ public final class Protocol {
     return SafeEncoder.encode(String.valueOf(value));
   }
 
+  public static final int convertByteArrayToInt(final byte[] value) {
+    return SafeEncoder.decode(value);
+  }
+
+
+
   public static enum Command implements ProtocolCommand {
     PING, SET, GET, QUIT, EXISTS, DEL, TYPE, FLUSHDB, KEYS, RANDOMKEY, RENAME, RENAMENX, RENAMEX, 
     DBSIZE, EXPIRE, EXPIREAT, TTL, SELECT, MOVE, FLUSHALL, GETSET, MGET, SETNX, SETEX, MSET, MSETNX, 

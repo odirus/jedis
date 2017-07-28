@@ -15,11 +15,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import redis.clients.jedis.BinaryClient.LIST_POSITION;
 import redis.clients.jedis.commands.*;
 import redis.clients.jedis.exceptions.InvalidURIException;
@@ -58,6 +62,10 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
 
   public BinaryJedis(final String host, final int port, final boolean ssl) {
     client = new Client(host, port, ssl);
+  }
+
+  public BinaryJedis(final String host, final int port, final ConnectionOption option) {
+    client = new Client(host, port, option);
   }
 
   public BinaryJedis(final String host, final int port, final boolean ssl,
@@ -3193,8 +3201,28 @@ public class BinaryJedis implements BasicCommands, BinaryJedisCommands, MultiKey
     return params;
   }
 
+  // <byte[] md5, [byte[] script, byte[] scriptSha1]>
+  protected Map<ScriptCacheKey, byte[][]> scriptCacheMap = new ConcurrentHashMap<>();
+
+  protected synchronized void loadScript(byte[] scriptMD5, byte[] script) {
+    byte[] scriptSha1 = scriptLoad(script);
+    byte[][] scriptDetail = {script, scriptSha1};
+    scriptCacheMap.put(new ScriptCacheKey(scriptMD5), scriptDetail);
+  }
+
   @Override
   public Object eval(byte[] script, byte[] keyCount, byte[]... params) {
+    if (client.getConnectionOption().getOptimizeEval()) {
+      byte[] scriptMD5 = DigestUtils.md5(script);
+      byte[][] scriptDetail = scriptCacheMap.get(new ScriptCacheKey(scriptMD5));
+
+      if (scriptDetail != null) {
+        return evalsha(scriptDetail[1], Protocol.convertByteArrayToInt(keyCount), params);
+      } else {
+        loadScript(scriptMD5, script);
+      }
+    }
+
     client.setTimeoutInfinite();
     try {
       client.eval(script, keyCount, params);

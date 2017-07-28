@@ -60,6 +60,10 @@ public class BinaryClient extends Connection {
     super(host, port);
   }
 
+  public BinaryClient(final String host, final int port, ConnectionOption option) {
+    super(host, port, option);
+  }
+
   public BinaryClient(final String host, final int port, final boolean ssl) {
     super(host, port, ssl);
   }
